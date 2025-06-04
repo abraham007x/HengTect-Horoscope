@@ -29,11 +29,11 @@ def load_model(path):
     return model
 
 models_dict = {
-   "การงาน": load_model("Model_Tim/model_work-2_34.pth"),
-    "การเงิน": load_model("Model_Tim/model-money-2_34.pth"),
-    "ความรัก": load_model("Model_Tim/model_love-1_34.pth"),
-    "สุขภาพ": load_model("Model_Tim/model_health-3_34.pth"),
-    "คุ้มครอง": load_model("Model_Tim/model-protection-2_34.pth")
+    "การงาน": load_model("best-model\model_work-2_34.pth"),
+    "การเงิน": load_model("best-model\model-money-2_34.pth"),
+    "ความรัก": load_model("best-model/model_love-1_34.pth"),
+    "สุขภาพ": load_model("best-model\model_health-3_34.pth"),
+    "คุ้มครอง": load_model("best-model\model-protection-2_34.pth")
 }
 
 
