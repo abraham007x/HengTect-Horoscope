@@ -10,5 +10,5 @@ tk  # อาจต้องติดตั้งผ่าน OS เช่น `su
 google-generativeai
 python-dotenv
 requests
-
+gdown
 

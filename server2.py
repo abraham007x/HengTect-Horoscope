@@ -7,6 +7,7 @@ import mediapipe as mp
 from flask_cors import CORS
 import requests
 import os
+import gdown
 
 app = Flask(__name__)
 CORS(app)
@@ -28,12 +29,26 @@ def load_model(path):
     model.eval()
     return model
 
+
+def download_model(url, local_path):
+    if not os.path.exists(local_path):
+        print(f"🔽 กำลังโหลดโมเดล: {local_path}")
+        gdown.download(url, local_path, quiet=False)
+
+# โหลดจาก Google Drive
+download_model("https://drive.google.com/uc?id=160WTbJ82GPvtDkgV4y2k8lM3rccOurGB", "model_work.pth")
+download_model("https://drive.google.com/uc?id=1CsPGHNYvyCy_E8Ab6J3KfnrSBJCudNIo", "model_money.pth")
+download_model("https://drive.google.com/uc?id=1OP3PIMPtIq2-JStBdQFo_vFybkVgQEik", "model_love.pth")
+download_model("https://drive.google.com/uc?id=1S_8aY_Wpxu3oCgzo0jPSNq7OESbSd-N4", "model_health.pth")
+download_model("https://drive.google.com/uc?id=1AsJgsoy1VMfiAGQT9zFErb1fuYUy5-w4", "model_protect.pth")
+
+
 models_dict = {
-    "การงาน": load_model("best-model/model_work-2_34.pth"),
-    "การเงิน": load_model("best-model/model-money-2_34.pth"),
-    "ความรัก": load_model("best-model/model_love-1_34.pth"),
-    "สุขภาพ": load_model("best-model/model_health-3_34.pth"),
-    "คุ้มครอง": load_model("best-model/model-protection-2_34.pth")
+    "การงาน": load_model("model_work.pth"),
+    "การเงิน": load_model("model_money.pth"),
+    "ความรัก": load_model("model_love.pth"),
+    "สุขภาพ": load_model("model_health.pth"),
+    "คุ้มครอง": load_model("model_protect.pth")
 }
 
 
