@@ -1,9 +1,9 @@
 // ✅ script.model_based.js — เวอร์ชันที่ลบการคำนวณแบบ landmark และใช้โมเดลแทน พร้อมแก้ mapping คะแนนรวม
 (async () => {
   const [metrics, horData, sacredData] = await Promise.all([
-    fetch('face_metrics.json').then(r => r.json()),
-    fetch('horoscope_parsed.json').then(r => r.json()),
-    fetch('sacred_data.json').then(r => r.json())
+    fetch('./face_metrics.json').then(r => r.json()),
+    fetch('./horoscope_parsed.json').then(r => r.json()),
+    fetch('./sacred_data.json').then(r => r.json())
   ]);
 
   const labels = ['การงาน', 'การเงิน', 'ความรัก', 'สุขภาพ', 'คุ้มครอง'];
