@@ -1,15 +1,10 @@
-from flask import Flask, request, jsonify
-import torch, cv2
+from flask import Flask, request, jsonify, send_from_directory
+import torch, cv2, os, gdown, requests
 import numpy as np
 from torchvision import transforms, models
 from PIL import Image
 import mediapipe as mp
 from flask_cors import CORS
-import requests
-import os
-import gdown
-from flask import send_from_directory
-
 
 app = Flask(__name__)
 CORS(app)
@@ -24,38 +19,28 @@ LANDMARKS = {
     "คุ้มครอง": list(range(152, 171)),
 }
 
-def load_model(path):
+model_urls = {
+    "การงาน":  ("model_work.pth", "https://drive.google.com/uc?id=160WTbJ82GPvtDkgV4y2k8lM3rccOurGB"),
+    "การเงิน": ("model_money.pth", "https://drive.google.com/uc?id=1CsPGHNYvyCy_E8Ab6J3KfnrSBJCudNIo"),
+    "ความรัก": ("model_love.pth", "https://drive.google.com/uc?id=1OP3PIMPtIq2-JStBdQFo_vFybkVgQEik"),
+    "สุขภาพ":  ("model_health.pth", "https://drive.google.com/uc?id=1S_8aY_Wpxu3oCgzo0jPSNq7OESbSd-N4"),
+    "คุ้มครอง": ("model_protect.pth", "https://drive.google.com/uc?id=1AsJgsoy1VMfiAGQT9zFErb1fuYUy5-w4"),
+}
+
+def load_model_from_drive(filename, url):
+    if not os.path.exists(filename):
+        print(f"\n🔽 กำลังโหลดโมเดล: {filename}")
+        gdown.download(url, filename, quiet=False)
     model = models.resnet34(weights=None)
     model.fc = torch.nn.Linear(model.fc.in_features, 5)
-    model.load_state_dict(torch.load(path, map_location='cpu'))
+    model.load_state_dict(torch.load(filename, map_location='cpu'))
     model.eval()
     return model
 
-
-def download_model(url, local_path):
-    if not os.path.exists(local_path):
-        print(f"🔽 กำลังโหลดโมเดล: {local_path}")
-        gdown.download(url, local_path, quiet=False)
-
-# โหลดจาก Google Drive
-download_model("https://drive.google.com/uc?id=160WTbJ82GPvtDkgV4y2k8lM3rccOurGB", "model_work.pth")
-download_model("https://drive.google.com/uc?id=1CsPGHNYvyCy_E8Ab6J3KfnrSBJCudNIo", "model_money.pth")
-download_model("https://drive.google.com/uc?id=1OP3PIMPtIq2-JStBdQFo_vFybkVgQEik", "model_love.pth")
-download_model("https://drive.google.com/uc?id=1S_8aY_Wpxu3oCgzo0jPSNq7OESbSd-N4", "model_health.pth")
-download_model("https://drive.google.com/uc?id=1AsJgsoy1VMfiAGQT9zFErb1fuYUy5-w4", "model_protect.pth")
-
-
-models_dict = {
-    "การงาน": load_model("model_work.pth"),
-    "การเงิน": load_model("model_money.pth"),
-    "ความรัก": load_model("model_love.pth"),
-    "สุขภาพ": load_model("model_health.pth"),
-    "คุ้มครอง": load_model("model_protect.pth")
-}
-
-
-
-transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor()
+])
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -72,7 +57,7 @@ def predict():
     landmarks = results.multi_face_landmarks[0].landmark
     featureScores = {}
 
-    for label, model in models_dict.items():
+    for label, (fname, url) in model_urls.items():
         pts = np.array([(int(landmarks[i].x * w), int(landmarks[i].y * h)) for i in LANDMARKS[label]])
         x, y, ww, hh = cv2.boundingRect(pts)
         crop = image_bgr[max(y-10,0):y+hh+10, max(x-10,0):x+ww+10]
@@ -83,13 +68,17 @@ def predict():
 
         img = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
         input_tensor = transform(img).unsqueeze(0)
+
+        model = load_model_from_drive(fname, url)
         with torch.no_grad():
             pred = model(input_tensor).argmax().item()
             featureScores[label] = score_map[pred]
 
+        del model
+        torch.cuda.empty_cache()
+
     return jsonify({"featureScores": featureScores})
 
-# Gemini API key ควรเก็บใน environment variable
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("No Gemini API key set in environment variable GEMINI_API_KEY")
@@ -102,7 +91,6 @@ def generate_horoscope():
     score = data.get("score")
     zodiac = data.get("zodiac")
     deity_name = data.get("deity", "องค์เทพที่เหมาะสม")
-
 
     if not score or not zodiac:
         return jsonify({"error": "ข้อมูลไม่ครบ"}), 400
@@ -125,38 +113,19 @@ def generate_horoscope():
 
 คำทำนายทั้งหมดให้อยู่ในรูปแบบข้อความเดียว ความยาวประมาณ 10–11 บรรทัด  
 เน้นภาษาที่งดงาม มีความศักดิ์สิทธิ์ เหมาะสมกับการเป็นคำทำนายจากหมอดูผู้มีวิชา"""
-    
-
-
-    
-
 
     try:
-        body = {
-            "contents": [
-                {
-                    "parts": [
-                        {"text": prompt}
-                    ]
-                }
-            ]
-        }
-        headers = {
-            "Content-Type": "application/json"
-        }
-
+        body = {"contents": [{"parts": [{"text": prompt}]}]}
+        headers = {"Content-Type": "application/json"}
         resp = requests.post(GEMINI_URL, json=body, headers=headers)
         resp.raise_for_status()
-
         response_data = resp.json()
         result = response_data['candidates'][0]['content'] if 'candidates' in response_data and response_data['candidates'] else "ไม่มีคำตอบจาก AI"
-
         return jsonify({"result": result})
 
     except Exception as e:
         print("❌ Gemini API ERROR:", e)
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/')
 def serve_index():
@@ -166,7 +135,5 @@ def serve_index():
 def serve_static(path):
     return send_from_directory('static', path)
 
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
