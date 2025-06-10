@@ -8,6 +8,8 @@ from flask_cors import CORS
 import requests
 import os
 import gdown
+from flask import send_from_directory
+
 
 app = Flask(__name__)
 CORS(app)
@@ -154,6 +156,15 @@ def generate_horoscope():
     except Exception as e:
         print("❌ Gemini API ERROR:", e)
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/')
+def serve_index():
+    return send_from_directory('static', 'index1.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
 
 
 if __name__ == '__main__':

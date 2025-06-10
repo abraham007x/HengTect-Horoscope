@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <title>สแกนโหงวเฮ้ง + ดูดวงราศี + เรดาร์ชาร์ต</title>
+  <style>
+    body {
+      background: #fff8e1;
+      /* สีครีมอ่อน */
+      color: #5d4037;
+      /* สีน้ำตาล */
+      font-family: 'Kanit', sans-serif;
+      padding: 1rem;
+    }
+
+    h1,
+    h2 {
+      text-align: center;
+      color: #6d4c41;
+    }
+
+    #controls,
+    #results {
+      margin: 1rem auto;
+      text-align: center;
+    }
+
+    button {
+      padding: 0.75rem 1.2rem;
+      border-radius: 12px;
+      background: linear-gradient(to right, #FFEB8D, #FFEB8D);
+      /* สีทองเบาๆ */
+      color: #4e342e;
+      /* ตัวอักษรสีน้ำตาลเข้ม */
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      /* เงาของปุ่ม */
+    }
+
+    button:hover {
+      background: linear-gradient(to right, #FFEB8D, #FFEB8D);
+      /* สีทองเข้มเมื่อโฮเวอร์ */
+      transform: scale(1.05);
+      /* ขยายปุ่มเล็กน้อยเมื่อเอาเมาส์ไปชี้ */
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+      /* เพิ่มเงาเมื่อโฮเวอร์ */
+    }
+
+    button:active {
+      background: linear-gradient(to right, #FFEB8D, #FFEB8D);
+      /* สีทองเหมือนเดิมเมื่อคลิก */
+      transform: scale(1);
+      /* กลับสู่ขนาดเดิม */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      /* เงากลับเป็นเหมือนเดิม */
+    }
+
+    #input_video {
+      display: block;
+      margin: 0 auto;
+      width: 640px;
+      height: 480px;
+      background: #000;
+    }
+
+    #faceResults {
+      text-align: center;
+    }
+
+    #faceResults p {
+      margin: 0.2rem 0;
+    }
+
+    #radarWrapper {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin: 2rem auto;
+    }
+
+    /* กรอบของคำทำนายโหงวเฮ้งและราศี */
+    /* กรอบคำทำนายโหงวเฮ้งและราศีให้เหมือนกัน */
+    #faceSummaryContainer,
+    #zodiacBoxesContainer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      /* จัดให้กรอบห่างพอดี */
+      gap: 10px;
+      margin-top: 2rem;
+      /* เพิ่มช่องว่างระหว่างกรอบ */
+    }
+
+    /* กรอบคะแนนโหงวเฮ้งและราศีให้เหมือนกัน */
+    .face-summary,
+    .zodiac-summary {
+      background: #ffffff;
+      border: 2px solid #ffd54f;
+      border-radius: 12px;
+      padding: 0.75rem;
+      width: 160px;
+      /* กำหนดความกว้างของกรอบให้เท่ากัน */
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      font-size: 1rem;
+      line-height: 1.4;
+      transition: box-shadow 0.3s ease;
+    }
+
+    /* ลดขนาดตัวอักษรในกรอบ */
+    .face-summary p,
+    .zodiac-summary p {
+      font-size: 0.9rem;
+    }
+
+    /* เพิ่มเอฟเฟกต์เมื่อ hover */
+    .face-summary:hover,
+    .zodiac-summary:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .toggle-detail,
+    .zodiac-toggle {
+      font-size: 0.85rem;
+      /* 🔹 ปรับขนาดตัวอักษรให้เล็กลง */
+      padding: 4px 10px;
+      /* 🔹 ปรับ padding ให้เล็กลง */
+      background: #ffe082;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      /* 🔹 ลดความหนาให้เบาลงนิดนึง */
+      margin-top: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-detail:hover,
+    .zodiac-toggle:hover {
+      background: #ffd54f;
+    }
+
+    .hidden-detail {
+      display: none;
+      margin-top: 0.5rem;
+      font-size: 1rem;
+      color: #5d4037;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+
+    .graph-card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 420px;
+      /* ← เพิ่มความกว้างจากเดิม */
+    }
+
+    #radarChart {
+      max-width: 100%;
+    }
+
+    #deityTip {
+      font-size: 1rem;
+      color: #5d4037;
+    }
+
+    #deityButtons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .deity-comparison {
+      display: flex;
+      flex-wrap: wrap;
+      /* ให้บรรจุหลายบรรทัดได้ */
+      justify-content: center;
+      /* จัดกึ่งกลางแนวนอน */
+      gap: 1rem;
+      /* ช่องว่างระหว่างกราฟและกล่อง */
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+
+    .deity-box-left,
+    .deity-box-right,
+    .radar-box {
+      flex: 1 1 280px;
+      /* ให้แต่ละกล่องมีความกว้างขั้นต่ำ 280px และขยายตามพื้นที่ */
+      max-width: 320px;
+      /* กำหนดความกว้างสูงสุด */
+      margin: 0 auto;
+      /* กึ่งกลางในแนวตั้งถ้ามีช่องว่าง */
+    }
+
+    .radar-box {
+      max-width: 400px;
+      /* กราฟอาจกว้างกว่าเล็กน้อย */
+    }
+
+
+
+    #deityButtons button {
+      width: 120px;
+      height: auto;
+      text-align: center;
+      background: #fff3e0;
+      color: #4e342e;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      border-radius: 12px;
+      font-weight: bold;
+    }
+
+    canvas.snapshot {
+      display: block;
+      margin: 1rem auto;
+      border: 2px solid lime;
+      max-width: 100%;
+    }
+
+    .popup-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .popup-box {
+      flex: 1 1 300px;
+      background: #ffffff;
+      /* พื้นหลังขาว */
+      border: 2px solid #ffd700;
+      /* ขอบทอง */
+      color: #5d4037;
+      /* ตัวหนังสือสีน้ำตาล */
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      /* เงาเบาๆ */
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.4s ease;
+      max-width: 400px;
+      box-sizing: border-box;
+    }
+
+    .popup-box.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+
+    .merged-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    #deityButtons h2 {
+      text-align: center;
+      width: 100%;
+      margin-bottom: 1rem;
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
+
+    .recommended-product {
+      width: 100%;
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 1.1rem;
+      color: #5d4037;
+    }
+
+    .btn-primary {
+      background: linear-gradient(to right, #ffcc80, #ffb74d);
+      color: #4e342e;
+      border-radius: 20px;
+      font-weight: bold;
+      padding: 0.6rem 1.2rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(to right, #ffa726, #fb8c00);
+    }
+
+
+
+
+    .subtitle {
+      text-align: center;
+      font-size: 1.2rem;
+      margin-top: -0.5rem;
+      color: #5d4037;
+      font-style: italic;
+    }
+
+    #input_video {
+      display: block;
+      margin: 0 auto;
+      width: 640px;
+      height: 480px;
+
+      background: url('data:image/png;base64,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') center center no-repeat;
+      background-size: 100px 100px;
+      /* ขนาดไอคอนกล้อง */
+      background-color: #f2f2f2;
+      /* สีพื้นหลังอ่อน */
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      object-fit: cover;
+    }
+
+    #aiHoroscopeResult {
+      display: flex;
+      justify-content: center;
+      /* จัดแนวนอนให้กลาง */
+      text-align: center;
+      /* ข้อความอยู่กลางภายในกล่อง */
+      margin-top: 2rem;
+    }
+
+    #aiHoroscopeResult .popup-box {
+      max-width: 800px;
+      /* จำกัดความกว้างไม่ให้ยาวเกิน */
+      background: #ffffff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      font-size: 1.1rem;
+      color: #5d4037;
+      line-height: 1.9;
+    }
+
+    #aiHoroscopeResult .popup-box h3,
+    #aiHoroscopeResult .popup-box h4 {
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+      /* ✅ ลดจากค่าปกติที่ห่างเยอะเกิน */
+    }
+
+
+    .section-box {
+      background: #ffffff;
+      padding: 1.5rem;
+      margin: 1.5rem auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      width: 95%;
+      max-width: 1200px;
+    }
+
+    .section-box h2,
+    .section-box h3 {
+      text-align: center;
+      color: #5d4037;
+      margin-bottom: 1rem;
+    }
+
+
+    /* กำหนดสำหรับมือถือ */
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+        font-size: 16px;
+        background: #fff8e1;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+        font-weight: bold;
+      }
+
+      h2 {
+        font-size: 1.3rem;
+        margin-bottom: 0.75rem;
+      }
+
+      #input_video {
+        width: 100% !important;
+        height: auto !important;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+        margin-bottom: 1rem;
+      }
+
+      #controls {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      #controls label,
+      #controls input,
+      #controls button {
+        width: 100%;
+        max-width: 320px;
+      }
+
+      button {
+        font-size: 1.1rem;
+        padding: 0.75rem 1.2rem;
+        border-radius: 12px;
+        transition: background-color 0.3s ease;
+      }
+
+      #faceResults,
+      #results {
+        padding: 0 1rem;
+      }
+
+      .face-summary {
+        width: 100% !important;
+        max-width: 360px;
+        font-size: 1rem;
+        padding: 1rem;
+        margin: 0 auto;
+      }
+
+      #deityComparison {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 1rem !important;
+        padding: 0 1rem !important;
+      }
+
+      .radar-box {
+        order: 1 !important;
+        width: 100% !important;
+        max-width: 400px !important;
+        margin-bottom: 1rem !important;
+      }
+
+      #deityTip,
+      #deityChosen {
+        order: 2 !important;
+        width: 100% !important;
+        max-width: 320px !important;
+      }
+
+      #deityButtons button {
+        width: 100% !important;
+        max-width: 360px !important;
+        margin-bottom: 0.5rem;
+      }
+
+      /* ปุ่ม Next/Prev กว้างและกดง่าย */
+      #nextBtn1,
+      #prevBtn2 {
+        width: 90%;
+        max-width: 320px;
+        padding: 1rem;
+        font-size: 1.2rem;
+        margin: 1rem auto;
+        background: linear-gradient(to right, #ffcc80, #ffb74d);
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      #nextBtn1:hover,
+      #prevBtn2:hover {
+        background: linear-gradient(to right, #ffa726, #fb8c00);
+      }
+
+      .face-summary,
+      .zodiac-summary {
+        width: 100% !important;
+        /* ปรับให้เต็มความกว้างเมื่อเล็ก */
+        margin-bottom: 10px;
+      }
+
+      #faceSummaryContainer,
+      #zodiacBoxesContainer {
+        flex-direction: column;
+        /* แสดงเป็นแนวตั้ง */
+        gap: 15px;
+      }
+    }
+  </style>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- MediaPipe FaceMesh -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <!-- Our logic -->
+  <script defer src="script1.js"></script>
+</head>
+
+<body>
+  <h1>🔮✨Hengtech Horoscope✨🔮</h1>
+  <p class="subtitle">สแกนใบหน้า รู้ชะตา แนะเทพเสริมพลัง โดย AI</p>
+
+
+  <div id="page1" class="page">
+    <div id="controls">
+      <label for="birthdate">วันเกิด:</label>
+      <input type="date" id="birthdate">
+      <button id="btnHoroscope" disabled>ดูดวงราศี</button>
+    </div>
+
+   <div style="position: relative; width: 640px; height: 480px; margin: auto;">
+  <video id="input_video" width="640" height="480" style="display: block;"></video>
+  <canvas id="overlayCanvas" width="640" height="480" style="position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none;"></canvas>
+</div>
+
+<div id="aiHoroscopeResult">
+      <div class="popup-box show">
+        <h3>🌟🤖 คำทำนาย AI 🤖🌟</h3>
+        <p>หมอดูจะทำนายโหวงเฮ้งกับดวงราศี</p>
+      </div>
+    </div>
+    <!-- ✅ กล่องใหญ่รวมคำทำนายโหงวเฮ้ง -->
+    <div class="section-box popup-box show">
+      <div id="faceResults">
+        <h2>🧠 โหงวเฮ้ง 🧠</h2>
+      </div>
+      <div id="faceSummaryContainer"></div>
+    </div>
+
+    <!-- ✅ กล่องใหญ่รวมคำทำนายราศี -->
+    <div class="section-box popup-box show">
+      <div id="zodiacResult">
+        <h2>🧭ราศีของคุณคือ🧭</h2>
+      </div>
+      <div id="horoscopeResult">
+        <h2>ราศี</h2>
+      </div>
+      <div id="zodiacBoxesContainer" class="flex-wrap-container"></div>
+    </div>
+
+    <!-- <div id="aiHoroscopeResult">
+      <div class="popup-box show">
+        <h3>🌟🤖 คำทำนาย AI 🤖🌟</h3>
+        <p>...เนื้อหา...</p>
+      </div>
+    </div> -->
+
+    <!-- ✅ ปุ่มถัดไป ย้ายมาอยู่ข้างใน page1 -->
+    <div style="text-align: center; margin-top: 1rem;">
+      <button id="nextBtn1">เลือกองค์เทพ</button>
+    </div>
+  </div> <!-- จบ page1 -->
+
+  <div id="page2" class="page" style="display:none;">
+    <!-- ✅ ใช้ layout 3 คอลัมน์ -->
+    <div id="deityComparison" class="deity-comparison">
+      <div id="deityTip" class="deity-box-left"></div> <!-- แนะนำ -->
+      <div class="radar-box">
+        <canvas id="radarChart"></canvas> <!-- กราฟ -->
+      </div>
+      <div id="deityChosen" class="deity-box-right"></div> <!-- เทพที่เลือก -->
+    </div>
+
+    <!-- ปุ่มเลือกเทพ -->
+    <div id="deityButtons">
+      <h2>เลือกองค์เทพเพื่อเสริมสเตตัส</h2>
+    </div>
+
+    <!-- ปุ่มก่อนหน้า -->
+    <div style="text-align: center; margin-top: 1rem;">
+      <button id="prevBtn2">เริ่มถ่ายรูปใหม่</button>
+    </div>
+  </div>
+</body>
+
+<script>
+  document.getElementById('nextBtn1').addEventListener('click', () => {
+    document.getElementById('page1').style.display = 'none';
+    document.getElementById('page2').style.display = 'block';
+  });
+
+  document.getElementById('prevBtn2').addEventListener('click', () => {
+    document.getElementById('page2').style.display = 'none';
+    document.getElementById('page1').style.display = 'block';
+  });
+</script>
+
+
+</html>
